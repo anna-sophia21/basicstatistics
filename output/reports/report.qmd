@@ -1,0 +1,59 @@
+---
+title: "Confirmed Ebola Cases In Three Countries"
+author: "Anna-Sophia Stocker"
+date: "`r date()`"
+format: html
+  
+  
+---
+
+```{r}
+#|output: false
+# Load libraries
+library(here)
+library(tidyverse)
+library(lubridate)
+```
+
+##Introduction
+
+##Data
+
+Load Data from 
+
+```{r}
+#|output: false
+# Read data
+ebola <- read.csv("C:/Users/Home-Office/Documents/PHS-Kurs/basicstatistics/data/raw/ebola.csv")
+ebola$Date <- as.Date(ebola$Date) 
+ebola <- arrange(ebola, Date)
+ebolacases <- ebola |>
+  select(date = Date, country = Country, cum_conf_cases = Cum_conf_cases) |>
+  filter(date <= as.Date("2015-03-31") & 
+           (country == "Guinea" | country == "Liberia" | country == "Sierra Leone"))
+```
+
+##Results Plot 4G
+
+```{r}
+#|output: false
+# Generate Figure
+plot_ebola_point_v4 <-ggplot(data = ebolacases, #Pointplot  
+       mapping = aes(x = date, y =cum_conf_cases, fill = country, colour = country))+
+  geom_point(alpha = 0.7, shape = 21, size = 2, stroke = 1)+
+  geom_line() +
+  scale_fill_manual(name = "country",
+                    breaks = c("Guinea", "Liberia", "Sierra Leone"), #Bezeichnung aus Daten
+                    values = c("green", "blue", "turquoise"),
+                    labels = c("Guinea", "Liberia", "Sierra Leone"))+ #Bezeichnung für meine Labels
+  scale_colour_manual(name = "country",
+                      breaks = c("Guinea", "Liberia", "Sierra Leone"),
+                      values = c("green", "blue", "turquoise"),
+                      labels = c("Guinea", "Liberia", "Sierra Leone"))+
+  scale_x_date(breaks = as.Date(c("2014-08-29", "2014-10-01", "2014-12-01", "2015-02-01", "2015-04-01")),
+               labels = c("29 August", "1 October", "1 Dezember", "1 February", "1 April"),
+               limits = as.Date(c("2014-08-28", "2015-04-02"))) +
+   ggtitle(label = "Confirmed Ebola cases") +
+  xlab(label = "Time") +
+  ylab(label = "Cum. # of confirmed cases")
+```
