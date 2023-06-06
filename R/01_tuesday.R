@@ -6,4 +6,4 @@ gitcreds_get()
 gitcreds_set()
 
 use_git()
-use_github()
+usethis::use_github()
