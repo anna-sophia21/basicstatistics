@@ -2,29 +2,40 @@
 title: "Confirmed Ebola Cases In Three Countries"
 author: "Anna-Sophia Stocker"
 date: "`r date()`"
-format: html
-  
-  
+format: 
+  html:
+   toc: true
+   code-fold: show
+   code-tools: true
+   df-print: paged
+   embed-resources: true
+   
 ---
 
 ```{r}
-#|output: false
+#| output: false
 # Load libraries
 library(here)
 library(tidyverse)
 library(lubridate)
 ```
 
-##Introduction
+## Introduction
 
-##Data
+The aim of this exercises is to visualize the cumulative number of confirmed ebola cases in three African countries in 2014 and 2015.
 
-Load Data from 
+## Data
+
+We read and process the data of confirmed ebola cases.
 
 ```{r}
-#|output: false
+#| output: false
 # Read data
 ebola <- read.csv("C:/Users/Home-Office/Documents/PHS-Kurs/basicstatistics/data/raw/ebola.csv")
+```
+
+```{r}
+# Process data
 ebola$Date <- as.Date(ebola$Date) 
 ebola <- arrange(ebola, Date)
 ebolacases <- ebola |>
@@ -33,19 +44,23 @@ ebolacases <- ebola |>
            (country == "Guinea" | country == "Liberia" | country == "Sierra Leone"))
 ```
 
-##Results Plot 4G
+## Results
+
+@fig-cases shows the cumulative number of confirmed ebola cases from August 2014 up to and including March 2015.
 
 ```{r}
-#|output: false
-# Generate Figure
-plot_ebola_point_v4 <-ggplot(data = ebolacases, #Pointplot  
+#| label: fig-cases
+#| fig-cap: "confirmed ebola cases in three countries"
+#| fig-width: 8
+#| fig-height: 4
+ggplot(data = ebolacases,  
        mapping = aes(x = date, y =cum_conf_cases, fill = country, colour = country))+
   geom_point(alpha = 0.7, shape = 21, size = 2, stroke = 1)+
   geom_line() +
   scale_fill_manual(name = "country",
-                    breaks = c("Guinea", "Liberia", "Sierra Leone"), #Bezeichnung aus Daten
+                    breaks = c("Guinea", "Liberia", "Sierra Leone"), 
                     values = c("green", "blue", "turquoise"),
-                    labels = c("Guinea", "Liberia", "Sierra Leone"))+ #Bezeichnung für meine Labels
+                    labels = c("Guinea", "Liberia", "Sierra Leone"))+ 
   scale_colour_manual(name = "country",
                       breaks = c("Guinea", "Liberia", "Sierra Leone"),
                       values = c("green", "blue", "turquoise"),
@@ -57,3 +72,7 @@ plot_ebola_point_v4 <-ggplot(data = ebolacases, #Pointplot
   xlab(label = "Time") +
   ylab(label = "Cum. # of confirmed cases")
 ```
+
+## Conclusions
+
+Sierra Leone had more than double the cumulative number of cases than Liberia or Guinea in March 2015. The increase of cases in all three countries has slowed down in all three countries since January 2015.
