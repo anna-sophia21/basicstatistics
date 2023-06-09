@@ -392,13 +392,9 @@ library(ggplot2)
 library(readr)
 insurance <- read.csv("~/PHS-Kurs/basicstatistics/data/raw/insurance_with_date.csv")
 
-
-
-ggplot(data = insurance, aes (x = smoker, y = charges))+
-  geom_violin()+
+ggplot(data = insurance, aes (x = sex, y = charges))+
+  geom_boxplot()+
 ylab(label = "Charges ($)")
 
-ggplot(data = insurance, aes (x = charges, y = smoker))+
-  geom_boxplot()+
-  xlab(label = "Charges ($)")
+
 

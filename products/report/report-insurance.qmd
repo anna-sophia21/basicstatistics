@@ -1,0 +1,172 @@
+---
+title: "Cost of Health Insurance"
+author: "Anna-Sophia Stocker"
+date: "`r date()`"
+format: 
+  html:
+   toc: true
+   code-fold: show
+   code-tools: true
+   df-print: paged
+   embed-resources: true
+---
+
+```{r}
+#| output: false
+# Load libraries
+library(here)
+library(tidyverse)
+library(rstatix)
+library(unibeCols)
+library(gtsummary)
+```
+
+## Introduction
+
+The aim of this study is to compare the health insurance charges from women and men in the US. 
+
+## Data
+
+The data used for this analysis is from the Medical Cost Personal Datasets, that are available open source on [Kaggle](https://www.kaggle.com/datasets/mirichoi0218/insurance?resource=download)). 
+
+```{r}
+#| output: false
+# Read data
+insurance <- read_csv(here("data/raw/insurance_with_date.csv"))
+str(insurance)
+```
+
+## Results
+### Descriptive Statistics
+@tab-sex shows the basic descriptive values of the health insurance charges separate by men and women. Additionally, the percentage of smokers in the study population is shown. 
+
+```{r}
+#| label: tab-sex
+#| #| label: tab-sex
+#| tab-cap: "tab-sex"
+
+summarysex <- insurance |> 
+  tbl_summary(
+    by = sex, 
+    type = all_continuous() ~ "continuous2",
+    statistic = all_continuous() ~ c("{mean} ({sd})", "{median}", "{p25}, {p75}", "{min}", "{max}"),
+    include = c("sex", "charges")
+  )
+
+summarysex
+```
+
+#### Boxplot
+
+A Boxplot of the distribution of charges by women and men. 
+
+```{r}
+ggplot(data = insurance, aes (x = sex, y = charges, fill = sex))+
+  geom_boxplot(alpha = 0.7) +
+    scale_fill_manual(name = "sex",
+                  breaks = c("male", "female"),
+                  values = c(unibeApricotS()[1], unibeMintS()[1]),
+                  labels = c("male", "female")) +
+    scale_colour_manual(name = "sex",
+                  breaks = c("male", "female"),
+                  values = c(unibeApricotS()[1], unibeMintS()[1]),
+                  labels = c("male", "female"))+
+  ylab(label = "Charges ($)") +
+  xlab("Sex") +
+  ggtitle(label = "Insurance - Charges by Sex")+
+  theme_minimal() + 
+    theme(legend.position = "none")
+```
+
+#### Histogram
+
+The Histogram shows a distribution of the d
+
+```{r}
+ggplot(data = insurance, aes(x = charges, fill = sex, colour)) +
+  geom_histogram()+
+  facet_wrap("sex")+
+  scale_fill_manual(name = "sex",
+                    breaks = c("male", "female"),
+                    values = c(unibeApricotS()[1], unibeMintS()[1]),
+                    labels = c("male", "female")) +
+  scale_colour_manual(name = "sex",
+                      breaks = c("male", "female"),
+                      values = c(unibeApricotS()[1], unibeMintS()[1]),
+                      labels = c("male", "female"))+
+  theme_minimal() + 
+  theme(legend.position = "none")
+```
+
+### Test for Normality
+The Histogram
+A QQ-Plot shows, that the distribution of the Charges-Data "abweichen" from the normal distribution.
+
+```{r}
+insurance |>
+  ggplot(aes(sample = charges, ill = sex, colour = sex)) +
+  geom_qq_line(distribution = stats::qnorm)+
+  geom_qq()+
+  facet_wrap("sex")+
+  scale_fill_manual(name = "sex",
+                  breaks = c("male", "female"),
+                  values = c(unibeApricotS()[1], unibeMintS()[1]),
+                  labels = c("male", "female")) +
+  scale_colour_manual(name = "sex",
+                      breaks = c("male", "female"),
+                      values = c(unibeApricotS()[1], unibeMintS()[1]),
+                      labels = c("male", "female"))+
+  theme_minimal() + 
+  theme(legend.position = "none")
+```
+
+```{r}
+insurance |>
+  group_by(sex) |>
+  shapiro_test(charges) 
+```
+
+#Transformation, repeat logs
+
+```{r}
+insurance$chargeslog <- log(insurance$charges)
+```
+
+```{r}
+insurance |>
+  ggplot(aes(sample = chargeslog, ill = sex, colour = sex)) +
+  geom_qq_line(distribution = stats::qnorm)+
+  geom_qq()+
+  facet_wrap("sex")
+```
+
+```{r}
+ggplot(data = insurance, aes(x = chargeslog, colour = sex)) +
+  geom_histogram()+
+  facet_wrap("sex")
+```
+
+```{r}
+insurance |>
+  group_by(sex) |> 
+  shapiro_test(chargeslog)
+```
+
+##Statistical tests
+
+```{r}
+t.test(chargeslog ~ sex, data = insurance)
+
+insurance |>
+    t_test(chargeslog ~ sex) |>
+    rename(...)
+```
+
+```{r}
+wilcox.test(charges ~ sex, data = insurance)
+
+```
+
+## Conclusions
+
+There is no statistical
