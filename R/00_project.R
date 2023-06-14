@@ -7,16 +7,13 @@
 #3. inferential part: analyse something by group 
 
 
-#### Versicherungsdaten aus Vorlesung Statistik II?
-#### no Label on boxplot
-#### Aussehen Boxplot definieren 
-
-
 library(tidyverse)
 library(dplyr)
 library(here)
 library(gtsummary)
 library(unibeCols)
+library(cowplot)
+
 
 insurance <- read_csv(here("data/raw/insurance_with_date.csv")) #here tells the R-Studio that here is the topdomain of your project 
 
@@ -30,24 +27,14 @@ summarysex <- insurance |>
     include = c("sex", "smoker", "charges")
   )
 
-#Statistik nach Raucherstatus
-summarysmoker <- insurance |> 
-  tbl_summary(
-    by = smoker, 
-    type = all_continuous() ~ "continuous2",
-    statistic = all_continuous() ~ c("{mean} ({sd})", "{median}", "{p25}, {p75}", "{min}", "{max}"),
-    include = c("sex", "smoker", "charges")
-  )
-
-
-#Plot1: #https://appsilon.com/ggplot2-boxplots/
+#Boxplot 
 ggplot(data = insurance, aes (x = sex, y = charges, fill = sex))+
-  geom_boxplot(alpha = 1) +
+  geom_boxplot(alpha = 0.7) +
     scale_fill_manual(name = "sex",
                   breaks = c("male", "female"),
                   values = c(unibeApricotS()[1], unibeMintS()[1]),
                   labels = c("male", "female")) +
-   scale_colour_manual(name = "sex",
+    scale_colour_manual(name = "sex",
                   breaks = c("male", "female"),
                   values = c(unibeApricotS()[1], unibeMintS()[1]),
                   labels = c("male", "female"))+
@@ -57,28 +44,52 @@ ggplot(data = insurance, aes (x = sex, y = charges, fill = sex))+
   theme_minimal() + 
     theme(legend.position = "none")
 
-unibePalettes()
-
-#Plot2:
-ggplot(data = insurance, aes (x = smoker, y = charges))+
-  geom_boxplot()+
-  ylab(label = "Charges ($)")
-
 #Statistics
 #1. Test for Normality
 
-ggplot(data = insurance, aes(x = charges, colour = sex)) +
-  geom_histogram()
+histogram1 <- ggplot(data = insurance, aes(x = charges, fill = sex)) +
+  geom_histogram()+
+  facet_wrap("sex")+
+  scale_fill_manual(name = "sex",
+                    breaks = c("male", "female"),
+                    values = c(unibeApricotS()[1], unibeMintS()[1]),
+                    labels = c("male", "female")) +
+  scale_colour_manual(name = "sex",
+                      breaks = c("male", "female"),
+                      values = c(unibeApricotS()[1], unibeMintS()[1]),
+                      labels = c("male", "female"))+
+  theme_minimal() + 
+  theme(legend.position = "none")
+  
 
-insurance |>
+qq_plot1 <- insurance |>
   ggplot(aes(sample = charges, ill = sex, colour = sex)) +
   geom_qq_line(distribution = stats::qnorm)+
   geom_qq()+
-  facet_wrap("sex")
+  facet_wrap("sex")+
+  scale_fill_manual(name = "sex",
+                  breaks = c("male", "female"),
+                  values = c(unibeApricotS()[1], unibeMintS()[1]),
+                  labels = c("male", "female")) +
+  scale_colour_manual(name = "sex",
+                      breaks = c("male", "female"),
+                      values = c(unibeApricotS()[1], unibeMintS()[1]),
+                      labels = c("male", "female"))+
+  theme_minimal() + 
+  theme(legend.position = "none")
 
 insurance |>
   group_by(sex) |>
   shapiro_test(charges)
+
+
+
+#klappt noch nicht
+plot1 <- plot_grid(plotlist = list(histogram1, qq_plot1),
+                                   labels = c("Histogram", "QQ-Plot"), nrow = 1)
+
+
+
 
 #Logtransformation der Daten
 
@@ -91,16 +102,24 @@ insurance |>
   facet_wrap("sex")
 
 ggplot(data = insurance, aes(x = chargeslog, colour = sex)) +
-  geom_histogram()
+  geom_histogram()+
+  facet_wrap("sex")
 
 insurance |>
-  group_by(sex) |>
+  group_by(sex) |> 
   shapiro_test(chargeslog)
 
-#T-Test von logtransformierten Daten, weil samplesize nicht so gross ist
-#T-Test nicht transformiert mit ...
+#T-Test von logtransformierten Daten, weil samplesize nicht so gross ist sollte das reichen
 
-pairwise_wilcox_test
+t.test(chargeslog ~ sex, data = insurance)
+
+#T-Test nicht transformiert mit ... pairwise_wilcox_test?
+
+wilcox.test(charges ~ sex, data = insurance)
+
+
+
+
 
 ##smokerzeug
 
@@ -113,3 +132,18 @@ insurance |>
 insurance |>
   group_by(smoker) |>
   shapiro_test(charges)
+
+
+#Statistik nach Raucherstatus
+summarysmoker <- insurance |> 
+  tbl_summary(
+    by = smoker, 
+    type = all_continuous() ~ "continuous2",
+    statistic = all_continuous() ~ c("{mean} ({sd})", "{median}", "{p25}, {p75}", "{min}", "{max}"),
+    include = c("sex", "smoker", "charges")
+  )
+
+#Plot2:
+ggplot(data = insurance, aes (x = smoker, y = charges))+
+  geom_boxplot()+
+  ylab(label = "Charges ($)")

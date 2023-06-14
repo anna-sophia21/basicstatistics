@@ -23,44 +23,45 @@ library(gtsummary)
 
 ## Introduction
 
-The aim of this study is to compare the health insurance charges from women and men in the US. 
+The aim of this study is to compare the health insurance charges from women and men in the US.
 
 ## Data
 
-The data used for this analysis is from the Medical Cost Personal Datasets, that are available open source on [Kaggle](https://www.kaggle.com/datasets/mirichoi0218/insurance?resource=download)). 
+The data used for this analysis is from the Medical Cost Personal Datasets, that are available open source on [Kaggle](https://www.kaggle.com/datasets/mirichoi0218/insurance?resource=download). We concentrate on the Charges-Data, the amount of health costs accumulated, by women and men in the US. Other available variables are ignored at this point. 
 
 ```{r}
 #| output: false
-# Read data
+# Read and transform data
 insurance <- read_csv(here("data/raw/insurance_with_date.csv"))
+insurance$sex <- as.factor(insurance$sex)
 str(insurance)
 ```
 
 ## Results
+
 ### Descriptive Statistics
-@tab-sex shows the basic descriptive values of the health insurance charges separate by men and women. Additionally, the percentage of smokers in the study population is shown. 
+
+@tbl-one shows the basic descriptive values of the health insurance charges separate by men and women. 
 
 ```{r}
-#| label: tab-sex
-#| #| label: tab-sex
-#| tab-cap: "tab-sex"
+#| label: tbl-one
+#| tbl-cap: "Overview of the data on health charges for women and men"
 
-summarysex <- insurance |> 
+insurance |> 
   tbl_summary(
     by = sex, 
     type = all_continuous() ~ "continuous2",
-    statistic = all_continuous() ~ c("{mean} ({sd})", "{median}", "{p25}, {p75}", "{min}", "{max}"),
+    statistic = all_continuous() ~ c("{mean} ({sd})", "{median}", "{p25} - {p75}", "{min}", "{max}"),
     include = c("sex", "charges")
   )
-
-summarysex
 ```
 
-#### Boxplot
-
-A Boxplot of the distribution of charges by women and men. 
+A Boxplot (@fig-one) shows the distribution of charges by women and men. On first glance, the data for women and men look quite similar, but with the distribution skewed to the lower end. 
 
 ```{r}
+#| label: fig-one
+#| fig-cap: "Boxplot of the distribution of health charges by sex"
+#| fig-subcap: "Whiskers at 1.5 IQR"
 ggplot(data = insurance, aes (x = sex, y = charges, fill = sex))+
   geom_boxplot(alpha = 0.7) +
     scale_fill_manual(name = "sex",
@@ -73,18 +74,21 @@ ggplot(data = insurance, aes (x = sex, y = charges, fill = sex))+
                   labels = c("male", "female"))+
   ylab(label = "Charges ($)") +
   xlab("Sex") +
-  ggtitle(label = "Insurance - Charges by Sex")+
   theme_minimal() + 
     theme(legend.position = "none")
+  
 ```
 
-#### Histogram
+#### Analysis of normality
 
-The Histogram shows a distribution of the d
+The Histogram (@fig-two) also shows a skewed to the left distribution of the Charges-Data in both women and men. The QQ-Plot (@fig-three) indicates that the the distribution differs from the normal distribution. This is confirmed by a Shapiro-Test for Normality (@tbl-two).
 
 ```{r}
-ggplot(data = insurance, aes(x = charges, fill = sex, colour)) +
-  geom_histogram()+
+#| label: fig-two
+#| fig-cap: "Histogram of the distribution of health charges by sex"
+# Histogram data by sex
+ggplot(data = insurance, aes(x = charges, fill = sex)) +
+  geom_histogram(alpha = 0.7, binwidth = 1000)+
   facet_wrap("sex")+
   scale_fill_manual(name = "sex",
                     breaks = c("male", "female"),
@@ -98,15 +102,75 @@ ggplot(data = insurance, aes(x = charges, fill = sex, colour)) +
   theme(legend.position = "none")
 ```
 
-### Test for Normality
-The Histogram
-A QQ-Plot shows, that the distribution of the Charges-Data "abweichen" from the normal distribution.
+```{r}
+#| label: fig-three
+#| fig-cap: "QQ-Plot of health-charges data"
+# QQ-Plot data by sex
+
+insurance |>
+  ggplot(aes(sample = charges, colour = sex, fill = sex)) +
+  geom_qq_line(distribution = stats::qnorm)+
+  geom_qq(alpha = 0.7)+
+  facet_wrap("sex")+
+  scale_fill_manual(name = "sex",
+                  breaks = c("male", "female"),
+                  values = c(unibeApricotS()[1], unibeMintS()[1]),
+                  labels = c("male", "female")) +
+  scale_colour_manual(name = "sex",
+                      breaks = c("male", "female"),
+                      values = c(unibeApricotS()[1], unibeMintS()[1]),
+                      labels = c("male", "female"))+
+  ylab(label = "Sample quantiles") +
+  xlab("Theoretical quantiles") +
+  theme_minimal() + 
+  theme(legend.position = "none")
+```
 
 ```{r}
+#| label: tbl-two
+#| tbl-cap: "Shapiro-test for Normality"
+# Test for Normality data by sex
 insurance |>
-  ggplot(aes(sample = charges, ill = sex, colour = sex)) +
+  group_by(sex) |>
+  shapiro_test(charges) 
+```
+
+#### Transformation of data
+A log-transformation of the Charges-Data was performed and Histogram (@fig-four) and QQ-Plot (@fig-five) repeated with the transformed Data. The distribution now looks closer to a normal distribution, although a Shapiro-Test for Normality (@tbl-three) still indicates non-normality.
+
+```{r}
+#| output: false
+# Transform data
+insurance$logcharges <- log(insurance$charges)
+```
+
+```{r}
+#| label: fig-four
+#| fig-cap: "Histogram of the distribution of the log-transformed health charges by sex"
+# Histogram of transformed data
+ggplot(data = insurance, aes(x = logcharges, fill = sex)) +
+  geom_histogram(alpha = 0.7, binwidth = 0.1)+
+  facet_wrap("sex")+
+  scale_fill_manual(name = "sex",
+                    breaks = c("male", "female"),
+                    values = c(unibeApricotS()[1], unibeMintS()[1]),
+                    labels = c("male", "female")) +
+  scale_colour_manual(name = "sex",
+                      breaks = c("male", "female"),
+                      values = c(unibeApricotS()[1], unibeMintS()[1]),
+                      labels = c("male", "female"))+
+  theme_minimal() + 
+  theme(legend.position = "none")
+```
+
+```{r}
+#| label: fig-five
+#| fig-cap: "QQ-Plot of log-transformed health-charges data"
+# QQ-Plot of transformed data
+insurance |>
+  ggplot(aes(sample = logcharges, ill = sex, colour = sex)) +
   geom_qq_line(distribution = stats::qnorm)+
-  geom_qq()+
+  geom_qq(alpha = 0.7)+
   facet_wrap("sex")+
   scale_fill_manual(name = "sex",
                   breaks = c("male", "female"),
@@ -121,52 +185,35 @@ insurance |>
 ```
 
 ```{r}
-insurance |>
-  group_by(sex) |>
-  shapiro_test(charges) 
-```
-
-#Transformation, repeat logs
-
-```{r}
-insurance$chargeslog <- log(insurance$charges)
-```
-
-```{r}
-insurance |>
-  ggplot(aes(sample = chargeslog, ill = sex, colour = sex)) +
-  geom_qq_line(distribution = stats::qnorm)+
-  geom_qq()+
-  facet_wrap("sex")
-```
-
-```{r}
-ggplot(data = insurance, aes(x = chargeslog, colour = sex)) +
-  geom_histogram()+
-  facet_wrap("sex")
-```
-
-```{r}
+#| label: tbl-three
+#| tbl-cap: "test for normality on transformed data"
+# Test for normality on transformed data
 insurance |>
   group_by(sex) |> 
-  shapiro_test(chargeslog)
+  shapiro_test(logcharges)
 ```
 
-##Statistical tests
+#### Inferential statistics
+A t-Test (@tbl-four) on the transformed data and a Wilcoxon rank sum test (@tbl-five) on the non-transformed data were executed. Both tests are not statistically significant. 
+
 
 ```{r}
-t.test(chargeslog ~ sex, data = insurance)
-
+#| label: tbl-four
+#| tbl-cap: "t-test on transformed health charges data"
+# T-test on transformed data 
 insurance |>
-    t_test(chargeslog ~ sex) |>
-    rename(...)
+    t_test(logcharges ~ sex)
 ```
 
 ```{r}
-wilcox.test(charges ~ sex, data = insurance)
+#| label: tbl-five
+#| tbl-cap: "wilcoxon rank sum test on original health charges data"
+# Test on original data 
+insurance |>
+  wilcox_test(charges ~ sex)
 
 ```
 
 ## Conclusions
 
-There is no statistical
+There is no indication of a statistical connection between the amount of health charges a person accumulates and their sex in the US. 
